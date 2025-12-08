@@ -47,7 +47,7 @@ def to_numeric_value(x):
 
 
 # -----------------------
-# New format pipeline (Open invoices_2.10.25)
+# New format pipeline (08.12.25)
 # -----------------------
 REQUIRED_OUTPUT_ORDER = [
     "Debtor Reference",
@@ -57,10 +57,10 @@ REQUIRED_OUTPUT_ORDER = [
     "Document Balance",
 ]
 
-CUST_COL_CANDIDATES = ["customer_name"]
-INV_NO_COL_CANDIDATES = ["invoice_number"]
+CUST_ID_COL_CANDIDATES = ["customer_id"]
+TRANS_NO_COL_CANDIDATES = ["transaction_number"]
 DATE_COL_CANDIDATES = ["date"]
-BALANCE_COL_CANDIDATES = ["bcy_balance"]
+BALANCE_COL_CANDIDATES = ["balance"]
 
 
 def _pick_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
@@ -86,16 +86,16 @@ def _format_date_series(s: pd.Series) -> pd.Series:
 def process_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     debug = {}
 
-    cust_col = _pick_column(df, CUST_COL_CANDIDATES)
-    doc_no_col = _pick_column(df, INV_NO_COL_CANDIDATES)
+    cust_id_col = _pick_column(df, CUST_ID_COL_CANDIDATES)
+    doc_no_col = _pick_column(df, TRANS_NO_COL_CANDIDATES)
     doc_date_col = _pick_column(df, DATE_COL_CANDIDATES)
     balance_col = _pick_column(df, BALANCE_COL_CANDIDATES)
 
     debug["detected_columns"] = {
-        "customer_name → Debtor Reference": cust_col,
-        "invoice_number → Document Number": doc_no_col,
+        "customer_id → Debtor Reference": cust_id_col,
+        "transaction_number → Document Number": doc_no_col,
         "date → Document Date": doc_date_col,
-        "bcy_balance → Document Balance": balance_col,
+        "balance → Document Balance": balance_col,
     }
 
     missing = [k for k, v in debug["detected_columns"].items() if v is None]
@@ -105,14 +105,14 @@ def process_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     out = pd.DataFrame()
 
     # Numeric balance
-    numeric_balance = df[balance_col].apply(to_numeric_value).astype("Float64")
+    balance = df[balance_col].apply(to_numeric_value).astype("Float64")
 
-    ## Column A - Debtor Reference: Remove commas
+    ## Column A - Debtor Reference: Last 6-digits of customer_id
     out["Debtor Reference"] = (
-        df[cust_col].astype(str).str.replace(",", "", regex=False).str.strip()
+        df[cust_id_col].astype(str).str.extract(r"(\d{6})$", expand=False).fillna("")
     )
     ## Column B - Transaction Type: INV if balance > 0 else CRD
-    out["Transaction Type"] = numeric_balance.apply(
+    out["Transaction Type"] = balance.apply(
         lambda v: "INV" if pd.notna(v) and v > 0 else "CRD"
     )
     ## Column C - Document Number
@@ -120,11 +120,11 @@ def process_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     ## Column D - Document Date: format as DD/MM/YYYY
     out["Document Date"] = _format_date_series(df[doc_date_col])
     ## Column E - Document Balance: rounded to 2 decimal places
-    out["Document Balance"] = numeric_balance.round(2)
+    out["Document Balance"] = balance.round(2)
 
     # --- Remove rows with 0 balance ---
-    nonzero_mask = numeric_balance.fillna(0) != 0
-    removed = len(numeric_balance) - nonzero_mask.sum()
+    nonzero_mask = balance.fillna(0) != 0
+    removed = len(balance) - nonzero_mask.sum()
 
     out = out.loc[nonzero_mask].reset_index(drop=True)
     debug["rows_removed_balance_0"] = int(removed)
