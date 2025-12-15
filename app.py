@@ -145,10 +145,11 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
     try:
+        ## -- Header row is 1 (2nd row) - Only for Omni Source exports --
         if uploaded_file.name.lower().endswith(".csv"):
-            df_in = pd.read_csv(uploaded_file, header=0)
+            df_in = pd.read_csv(uploaded_file, header=1)
         else:
-            df_in = pd.read_excel(uploaded_file, header=0, sheet_name=0)
+            df_in = pd.read_excel(uploaded_file, header=1, sheet_name=0)
 
         if df_in.empty:
             st.error("Uploaded file is empty.")
