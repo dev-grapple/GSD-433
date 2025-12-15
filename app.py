@@ -145,11 +145,36 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
     try:
-        ## -- Header row is 1 (2nd row) - Only for Omni Source exports --
+
+        def __detect_header_row(
+            df: pd.DataFrame, expected_cols: set[str], min_match: int = 2
+        ) -> int:
+            for i in range(min(5, len(df))):
+                row = df.iloc[i].astype(str).str.lower().str.strip()
+                matches = sum(col in row.values for col in expected_cols)
+                if matches >= min_match:
+                    return i
+            return 0
+
+        ## -- Read file with header detection --
+        expected_columns = {
+            "customer_id",
+            "transaction_number",
+            "date",
+            "balance",
+        }
+
         if uploaded_file.name.lower().endswith(".csv"):
-            df_in = pd.read_csv(uploaded_file, header=1)
+            df_in = pd.read_csv(uploaded_file, header=None)
         else:
-            df_in = pd.read_excel(uploaded_file, header=1, sheet_name=0)
+            df_in = pd.read_excel(uploaded_file, header=None, sheet_name=0)
+
+        header_row = __detect_header_row(df_in, expected_columns)
+        df_in = (
+            pd.read_csv(uploaded_file, header=header_row)
+            if uploaded_file.name.lower().endswith(".csv")
+            else pd.read_excel(uploaded_file, header=header_row, sheet_name=0)
+        )
 
         if df_in.empty:
             st.error("Uploaded file is empty.")
