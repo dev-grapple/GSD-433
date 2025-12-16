@@ -165,15 +165,22 @@ if uploaded_file:
         }
 
         if uploaded_file.name.lower().endswith(".csv"):
-            df_in = pd.read_csv(uploaded_file, header=None)
+            df_in = pd.read_csv(uploaded_file, header=None, dtype={"customer_id": str})
         else:
-            df_in = pd.read_excel(uploaded_file, header=None, sheet_name=0)
+            df_in = pd.read_excel(
+                uploaded_file, header=None, sheet_name=0, dtype={"customer_id": str}
+            )
 
         header_row = __detect_header_row(df_in, expected_columns)
         df_in = (
-            pd.read_csv(uploaded_file, header=header_row)
+            pd.read_csv(uploaded_file, header=header_row, dtype={"customer_id": str})
             if uploaded_file.name.lower().endswith(".csv")
-            else pd.read_excel(uploaded_file, header=header_row, sheet_name=0)
+            else pd.read_excel(
+                uploaded_file,
+                header=header_row,
+                sheet_name=0,
+                dtype={"customer_id": str},
+            )
         )
 
         if df_in.empty:
