@@ -71,9 +71,9 @@ def _pick_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
         if key in lower_map:
             return lower_map[key]
     for c in cols:
-        low = c.lower().replace(" ", "")
+        low = c.lower().replace(" ", "_")
         for cand in candidates:
-            if cand.lower().replace(" ", "") in low:
+            if cand.lower().replace(" ", "_") in low:
                 return c
     return None
 
@@ -151,7 +151,10 @@ if uploaded_file:
         ) -> int:
             for i in range(min(5, len(df))):
                 row = df.iloc[i].astype(str).str.lower().str.strip()
-                matches = sum(col in row.values for col in expected_cols)
+                matches = sum(
+                    col.replace("_", " ") in row.values or col in row.values
+                    for col in expected_cols
+                )
                 if matches >= min_match:
                     return i
             return 0
@@ -172,6 +175,9 @@ if uploaded_file:
             )
 
         header_row = __detect_header_row(df_in, expected_columns)
+
+        uploaded_file.seek(0)
+
         df_in = (
             pd.read_csv(uploaded_file, header=header_row, dtype={"customer_id": str})
             if uploaded_file.name.lower().endswith(".csv")
