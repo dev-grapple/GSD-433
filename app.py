@@ -58,7 +58,7 @@ REQUIRED_OUTPUT_ORDER = [
 ]
 
 CUST_ID_COL_CANDIDATES = ["customer_id"]
-TRANS_NO_COL_CANDIDATES = ["transaction_number"]
+TRANS_NO_COL_CANDIDATES = ["transaction_number", "invoice_number"]
 DATE_COL_CANDIDATES = ["date"]
 BALANCE_COL_CANDIDATES = ["balance"]
 
@@ -92,10 +92,10 @@ def process_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     balance_col = _pick_column(df, BALANCE_COL_CANDIDATES)
 
     debug["detected_columns"] = {
-        "customer_id → Debtor Reference": cust_id_col,
-        "transaction_number → Document Number": doc_no_col,
-        "date → Document Date": doc_date_col,
-        "balance → Document Balance": balance_col,
+        "Debtor Reference": cust_id_col,
+        "Document Number": doc_no_col,
+        "Document Date": doc_date_col,
+        "Document Balance": balance_col,
     }
 
     missing = [k for k, v in debug["detected_columns"].items() if v is None]
