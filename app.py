@@ -109,7 +109,11 @@ def process_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     ## Column A - Debtor Reference: Last 6-digits of customer_id
     out["Debtor Reference"] = (
-        df[cust_id_col].astype(str).str.extract(r"(\d{6})$", expand=False).fillna("")
+        df[cust_id_col]
+        .astype(str)
+        .str.extract(r"(\d{6})$", expand=False)
+        .fillna("")
+        .str.lstrip("0")
     )
     ## Column B - Transaction Type: INV if balance > 0 else CRD
     out["Transaction Type"] = balance.apply(
@@ -193,12 +197,12 @@ if uploaded_file:
             st.error("Uploaded file is empty.")
         else:
             st.subheader("Input preview")
-            st.dataframe(df_in.head(8))
+            st.dataframe(df_in.head(10))
 
             processed_df, debug = process_dataframe(df_in)
             st.subheader("Processed preview")
             st.dataframe(
-                processed_df.head(8),
+                processed_df.head(10),
                 column_config={
                     "Document Balance": st.column_config.NumberColumn(
                         "Document Balance", format="%.2f"
