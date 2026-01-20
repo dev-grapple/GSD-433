@@ -57,7 +57,7 @@ REQUIRED_OUTPUT_ORDER = [
     "Document Balance",
 ]
 
-CUST_ID_COL_CANDIDATES = ["customer_id"]
+CUST_ID_COL_CANDIDATES = ["contact_number"]
 TRANS_NO_COL_CANDIDATES = ["transaction_number", "invoice_number"]
 DATE_COL_CANDIDATES = ["date"]
 BALANCE_COL_CANDIDATES = ["balance"]
@@ -108,13 +108,7 @@ def process_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     balance = df[balance_col].apply(to_numeric_value).astype("Float64")
 
     ## Column A - Debtor Reference: Last 6-digits of customer_id
-    out["Debtor Reference"] = (
-        df[cust_id_col]
-        .astype(str)
-        .str.extract(r"(\d{6})$", expand=False)
-        .fillna("")
-        .str.lstrip("0")
-    )
+    out["Debtor Reference"] = df[cust_id_col].astype(str).fillna("").str.lstrip("0")
     ## Column B - Transaction Type: INV if balance > 0 else CRD
     out["Transaction Type"] = balance.apply(
         lambda v: "INV" if pd.notna(v) and v > 0 else "CRD"
